@@ -44,19 +44,26 @@ define(['jquery', 'backbone', 'module', 'text', 'dustjs-linkedin'], function($, 
                     render: function(obj, callback) {
                         dust.render.call(dust, name, obj, callback);
                     },
-                    // Modified: now takes an optional third param (defaults to false) that determines
-                    // whether or not the call to HTML updates the UI as well as returning the markup
-                    html: function(element, obj, update) {
-                        var updateUi = update || false;
+                    // Modified: now takes an optional fourth param (defaults to false) that determines
+                    // whether or not the call to HTML updates the UI as well as returning the markup, and
+                    // a required third param that is the view (so the template can access view methods)
+                    html: function(element, view, update) {
+                        var updateUi = update || false,
+                            context = dust.makeBase(view),
+                            data = view.mixinTemplateHelpers.call(view, view.serializeData()),
+                            obj = normalizeObject(data),
+                            instance = context.push(obj);
                         // Modified: added normalization to call
-                        return render(element, normalizeObject(obj), updateUi);
+                        return render(element, instance, updateUi);
                     },
                     view: function(view, replace){
                         // Marionette views have a serializeData method that determines
                         // which data should be attached to the view
-                        var obj = normalizeObject(view.serializeData());
-                        var context = dust.makeBase(view);
-                        var instance = context.push(obj);
+                        var data = view.mixinTemplateHelpers.call(view, view.serializeData()),
+                            obj = normalizeObject(data),
+                            context = dust.makeBase(view),
+                            instance = context.push(obj);
+
                         if(replace) {
                             var old = view.$el;
                             return render(old, instance, true).done(function(){
