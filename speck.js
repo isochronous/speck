@@ -13,12 +13,6 @@ define(['jquery', 'backbone', 'module', 'text', 'dustjs-linkedin'], function($, 
             text.get(req.toUrl(url), function(data) {
                 var compiled = dust.compile(data, name);
                 dust.loadSource(compiled);
-                var normalizeObject = function(obj) {
-                    if (obj === undefined || obj === null) {
-                        return {};
-                    }
-                    return JSON.parse(JSON.stringify(obj));
-                };
 
                 // Added updateUI to allow render method to NOT update UI
                 // if we just want to get the HTML back
@@ -51,8 +45,7 @@ define(['jquery', 'backbone', 'module', 'text', 'dustjs-linkedin'], function($, 
                         var updateUi = update || false,
                             context = dust.makeBase(view),
                             data = view.mixinTemplateHelpers.call(view, view.serializeData()),
-                            obj = normalizeObject(data),
-                            instance = context.push(obj);
+                            instance = context.push(data);
                         // Modified: added normalization to call
                         return render(element, instance, updateUi);
                     },
@@ -60,9 +53,8 @@ define(['jquery', 'backbone', 'module', 'text', 'dustjs-linkedin'], function($, 
                         // Marionette views have a serializeData method that determines
                         // which data should be attached to the view
                         var data = view.mixinTemplateHelpers.call(view, view.serializeData()),
-                            obj = normalizeObject(data),
                             context = dust.makeBase(view),
-                            instance = context.push(obj);
+                            instance = context.push(data);
 
                         if(replace) {
                             var old = view.$el;
