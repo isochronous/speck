@@ -1,17 +1,32 @@
-define(['jquery', 'backbone', 'module', 'text', 'dustjs-linkedin'], function($, Backbone, module, text, dust) {
+define(['jquery', 'backbone', 'marionette', 'module', 'text', 'dustjs-linkedin'],
+function($, Backbone, Marionette, module, text, dust) {
+
     var masterConfig = module.config();
+
     return {
+
         load: function(name, req, onLoad, config) {
-            var url = name;
-            if(masterConfig && 'speckUrl' in masterConfig && url[0] !== '.'){
-                url = masterConfig.speckUrl + url;
+            var url = name,
+                template = Marionette.TemplateCache.get(name);
+
+            if (!template) {
+                if(masterConfig && 'speckUrl' in masterConfig && url[0] !== '.'){
+                    url = masterConfig.speckUrl + url;
+                }
+                if (url.indexOf('.dust', url.length - 5) === -1) {
+                    url = url + '.dust';
+                }
             }
-            if (url.indexOf('.dust', url.length - 5) === -1) {
-                url = url + '.dust';
-            }
-            //TODO: Perhaps hook this up to marionette's template cache?
-            text.get(req.toUrl(url), function(data) {
-                var compiled = dust.compile(data, name);
+
+            var processTemplate = function(data, precompiled) {
+                var compiled;
+                if (precompiled) {
+                    compiled = data;
+                } else {
+                    compiled = dust.compile(data, name);
+                    Marionette.TemplateCache.cache(compiled, name);
+                }
+
                 dust.loadSource(compiled);
 
                 // Added updateUI to allow render method to NOT update UI
@@ -72,7 +87,13 @@ define(['jquery', 'backbone', 'module', 'text', 'dustjs-linkedin'], function($, 
                     compiled: compiled
                 };
                 onLoad(out);
-            });
+            }
+            //TODO: Perhaps hook this up to marionette's template cache?
+            if (template) {
+                processTemplate(template, true);
+            } else {
+                text.get(req.toUrl(url), processTemplate);
+            }
         }
     };
 });
